@@ -112,6 +112,43 @@ class ApiService {
       throw apiError;
     }
   }
+
+  async startApplication(data: any): Promise<ApiResponse<any>> {
+    console.log('🚀 Starting application:', data);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/start`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      const responseData = await response.json();
+      console.log('📡 Start Application API Response:', responseData);
+
+      if (!response.ok) {
+        const error = new Error(
+          responseData.error?.message ||
+            responseData.message ||
+            'Failed to start application'
+        );
+        (error as any).code = responseData.error?.code || 'API_ERROR';
+        throw error;
+      }
+
+      return {
+        success: responseData.success || true,
+        data: responseData.data || responseData,
+      };
+    } catch (error: any) {
+      console.error('Start Application API Request Error:', error);
+      const apiError = new Error(error.message || 'Network error occurred');
+      (apiError as any).code = 'NETWORK_ERROR';
+      throw apiError;
+    }
+  }
 }
 
 export const apiService = new ApiService();

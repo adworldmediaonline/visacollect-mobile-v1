@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { CheckStatusFormData } from '../lib/schemas';
+import { StartApplicationFormData } from '../lib/schemas/startApplication';
 import { apiService } from '../services/api';
 import { useApplicationStore } from '../stores/applicationStore';
 
@@ -10,22 +11,8 @@ export function useStartApplication() {
     useApplicationStore();
 
   return useMutation({
-    mutationFn: async () => {
-      // This will be replaced with actual API call when backend is ready
-      return new Promise(resolve => {
-        setTimeout(() => {
-          const mockApplicationId = `TUR-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
-          resolve({
-            success: true,
-            data: {
-              applicationId: mockApplicationId,
-              email: '',
-              currentStep: 1,
-              status: 'draft',
-            },
-          });
-        }, 500);
-      });
+    mutationFn: async (data: StartApplicationFormData) => {
+      return apiService.startApplication(data);
     },
     onSuccess: (response: any) => {
       if (response.success) {
@@ -35,8 +22,8 @@ export function useStartApplication() {
         setCurrentStep(data.currentStep);
         setStatus(data.status);
 
-        // Navigate to the application start page
-        router.push('/(country)/turkey/start');
+        // Navigate to the status screen to show application details
+        router.push(`/(country)/turkey/status?id=${data.applicationId}`);
       }
     },
   });
