@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { CheckStatusFormData } from '../lib/schemas';
 import { StartApplicationFormData } from '../lib/schemas/startApplication';
@@ -22,8 +22,10 @@ export function useStartApplication() {
         setCurrentStep(data.currentStep);
         setStatus(data.status);
 
-        // Navigate to the status screen to show application details
-        router.push(`/(country)/turkey/status?id=${data.applicationId}`);
+        // Navigate to the applicant details screen
+        router.push(
+          `/(country)/turkey/applicant-details?id=${data.applicationId}`
+        );
       }
     },
   });
@@ -66,11 +68,14 @@ export function useCheckApplicationStatus() {
   });
 }
 
-export function useGetApplication(applicationId: string) {
-  return useMutation({
-    mutationFn: async () => {
+export function useGetApplication(applicationId: string, email?: string) {
+  return useQuery({
+    queryKey: ['application', applicationId, email],
+    queryFn: async () => {
       return apiService.getApplication(applicationId);
     },
+    enabled: !!applicationId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -78,6 +83,42 @@ export function useGetPaymentByApplicationId(applicationId: string) {
   return useMutation({
     mutationFn: async () => {
       return apiService.getPaymentByApplicationId(applicationId);
+    },
+  });
+}
+
+export function useSubmitApplicantDetails() {
+  return useMutation({
+    mutationFn: async (data: {
+      applicationId: string;
+      applicantDetails: any;
+    }) => {
+      return apiService.saveApplicantDetails(data);
+    },
+  });
+}
+
+export function useUpdateApplicantDetails() {
+  return useMutation({
+    mutationFn: async (data: {
+      applicationId: string;
+      applicantDetails: any;
+    }) => {
+      return apiService.updateApplicantDetails(data);
+    },
+  });
+}
+
+export function useUpdateApplication() {
+  return useMutation({
+    mutationFn: async ({
+      applicationId,
+      data,
+    }: {
+      applicationId: string;
+      data: StartApplicationFormData;
+    }) => {
+      return apiService.updateApplication(applicationId, data);
     },
   });
 }

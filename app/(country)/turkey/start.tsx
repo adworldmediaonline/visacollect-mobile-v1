@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -29,11 +29,16 @@ import {
 import { Input } from '../../../components/ui/Input';
 import { PickerSelect } from '../../../components/ui/Picker';
 import { ProgressIndicator } from '../../../components/ui/ProgressIndicator';
-import { useStartApplication } from '../../../hooks/useTurkeyVisa';
+import {
+  useGetApplication,
+  useStartApplication,
+  useUpdateApplication,
+} from '../../../hooks/useTurkeyVisa';
 import {
   StartApplicationFormData,
   startApplicationSchema,
 } from '../../../lib/schemas/startApplication';
+import { useApplicationStore } from '../../../stores/applicationStore';
 
 const PASSPORT_COUNTRIES = [
   { label: 'India', value: 'India' },
@@ -146,10 +151,21 @@ const FEE_DATA: Record<string, any> = {
 
 export default function TurkeyStartScreen() {
   const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const applicationId = id;
+
+  // Zustand store
+  const { setApplicationId, setApplicationData } = useApplicationStore();
+
+  // Error state management
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
+  // Mutations and Queries
   const startApplicationMutation = useStartApplication();
+  const updateApplicationMutation = useUpdateApplication();
+  const { data: existingApplication, isLoading: isLoadingApplication } =
+    useGetApplication(applicationId || '', undefined);
 
   const form = useForm<StartApplicationFormData>({
     resolver: zodResolver(startApplicationSchema),
@@ -162,19 +178,110 @@ export default function TurkeyStartScreen() {
     },
   });
 
+  // Load existing data when component mounts or when data changes
+  useEffect(() => {
+    // Clear any existing errors and success messages
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    // If we have an existing application, populate the form with its data
+    if (existingApplication?.success && existingApplication.data) {
+      const appData = existingApplication.data;
+      form.reset({
+        passportCountry: appData.passportCountry || '',
+        travelDocument: appData.travelDocument || 'Ordinary Passport',
+        visaType: appData.visaType || 'Electronic Visa',
+        destination: appData.destination || 'Turkey',
+        email: appData.email || '',
+      });
+
+      // Update store with existing application data
+      setApplicationId(appData.applicationId);
+      setApplicationData({
+        email: appData.email,
+        passportCountry: appData.passportCountry,
+        travelDocument: appData.travelDocument,
+        visaType: appData.visaType,
+        destination: appData.destination,
+      });
+    } else {
+      // Reset form to default values for new application
+      form.reset({
+        passportCountry: '',
+        travelDocument: 'Ordinary Passport',
+        visaType: 'Electronic Visa',
+        destination: 'Turkey',
+        email: '',
+      });
+
+      // Additional cleanup: clear any stored application data that might interfere
+      setApplicationId(null);
+      setApplicationData({});
+    }
+  }, [form, existingApplication, setApplicationId, setApplicationData]);
+
   const selectedCountry = form.watch('passportCountry');
   const selectedCountryFee = selectedCountry ? FEE_DATA[selectedCountry] : null;
 
   const onSubmit = async (data: StartApplicationFormData) => {
+    // Clear any previous errors
     setErrorMessage('');
-    setSuccessMessage('');
+
+    // Validate required fields
+    if (!data.passportCountry || !data.travelDocument || !data.email) {
+      setErrorMessage('Please fill in all required fields.');
+      return;
+    }
 
     try {
+      // If we already have an application, update it on the backend
+      if (applicationId && existingApplication?.success) {
+        // Clear any previous messages
+        setErrorMessage('');
+        setSuccessMessage('');
+
+        try {
+          // Update application on backend
+          const updateResponse = await updateApplicationMutation.mutateAsync({
+            applicationId,
+            data,
+          });
+
+          if (updateResponse.success) {
+            // Update store with the response data
+            setApplicationData({
+              email: updateResponse.data.email,
+              passportCountry: updateResponse.data.passportCountry,
+              travelDocument: updateResponse.data.travelDocument,
+              visaType: updateResponse.data.visaType,
+              destination: updateResponse.data.destination,
+            });
+
+            // Show success message briefly
+            setSuccessMessage('Application details updated successfully!');
+
+            // Navigate to next step after a brief delay
+            setTimeout(() => {
+              router.push(
+                `/(country)/turkey/applicant-details?id=${applicationId}`
+              );
+            }, 1000);
+          }
+        } catch (error: any) {
+          console.error('Error updating application:', error);
+          setErrorMessage(
+            error.message || 'Failed to update application. Please try again.'
+          );
+        }
+        return;
+      }
+
+      // Create new application
       await startApplicationMutation.mutateAsync(data);
     } catch (error: any) {
       console.error('Error starting application:', error);
       setErrorMessage(
-        error.message || 'An unexpected error occurred. Please try again.'
+        error.message || 'Failed to start application. Please try again.'
       );
     }
   };
@@ -215,7 +322,11 @@ export default function TurkeyStartScreen() {
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 16 }}
+        contentContainerStyle={{
+          paddingHorizontal: 24,
+          paddingTop: 16,
+          paddingBottom: 100, // Add bottom padding to prevent content from being hidden behind sticky button
+        }}
       >
         {/* Progress Indicator */}
         <ProgressIndicator
@@ -398,33 +509,8 @@ export default function TurkeyStartScreen() {
           </Card>
         )}
 
-        {/* Action Buttons */}
-        <View className="gap-4 mb-8">
-          <Button onPress={handleBack} variant="outline" className="w-full">
-            <View className="flex-row items-center justify-center gap-2">
-              <ArrowLeft size={20} color="#6b7280" />
-              <Text className="text-gray-600 font-semibold">Back</Text>
-            </View>
-          </Button>
-
-          <Button
-            onPress={form.handleSubmit(onSubmit)}
-            loading={startApplicationMutation.isPending}
-            className="w-full"
-          >
-            <View className="flex-row items-center justify-center gap-2">
-              <Save size={20} color="#ffffff" />
-              <Text className="text-white font-semibold">
-                {startApplicationMutation.isPending
-                  ? 'Starting...'
-                  : 'Start Application'}
-              </Text>
-            </View>
-          </Button>
-        </View>
-
         {/* Info Card */}
-        <Card className="bg-blue-50 border-blue-200">
+        <Card className="bg-blue-50 border-blue-200 mb-8">
           <CardContent>
             <View className="items-center">
               <Text className="font-semibold text-blue-900 mb-2">
@@ -439,6 +525,34 @@ export default function TurkeyStartScreen() {
           </CardContent>
         </Card>
       </ScrollView>
+
+      {/* Sticky Action Buttons */}
+      <View className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4">
+        <View className="gap-3">
+          <Button
+            onPress={form.handleSubmit(onSubmit)}
+            loading={startApplicationMutation.isPending}
+            className="w-full"
+            size="lg"
+          >
+            <View className="flex-row items-center justify-center gap-2">
+              <Save size={20} color="#ffffff" />
+              <Text className="text-white font-semibold">
+                {startApplicationMutation.isPending
+                  ? 'Starting...'
+                  : 'Start Application'}
+              </Text>
+            </View>
+          </Button>
+
+          <Button onPress={handleBack} variant="outline" className="w-full">
+            <View className="flex-row items-center justify-center gap-2">
+              <ArrowLeft size={20} color="#6b7280" />
+              <Text className="text-gray-600 font-semibold">Back</Text>
+            </View>
+          </Button>
+        </View>
+      </View>
     </SafeAreaView>
   );
 }

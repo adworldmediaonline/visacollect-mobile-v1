@@ -3,10 +3,12 @@ import { persist } from 'zustand/middleware';
 import { ApplicationData } from '../types/country';
 
 interface ApplicationStore extends Partial<ApplicationData> {
-  setApplicationId: (id: string) => void;
+  applicationData: any;
+  setApplicationId: (id: string | null) => void;
   setEmail: (email: string) => void;
   setCurrentStep: (step: number) => void;
   setStatus: (status: string) => void;
+  setApplicationData: (data: any) => void;
   resetApplication: () => void;
 }
 
@@ -17,8 +19,9 @@ export const useApplicationStore = create<ApplicationStore>()(
       email: undefined,
       currentStep: undefined,
       status: undefined,
+      applicationData: {},
 
-      setApplicationId: (id: string) => set({ applicationId: id }),
+      setApplicationId: (id: string | null) => set({ applicationId: id }),
 
       setEmail: (email: string) => set({ email }),
 
@@ -26,12 +29,15 @@ export const useApplicationStore = create<ApplicationStore>()(
 
       setStatus: (status: string) => set({ status }),
 
+      setApplicationData: (data: any) => set({ applicationData: data }),
+
       resetApplication: () =>
         set({
           applicationId: undefined,
           email: undefined,
           currentStep: undefined,
           status: undefined,
+          applicationData: {},
         }),
     }),
     {

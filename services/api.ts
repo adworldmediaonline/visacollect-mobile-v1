@@ -149,6 +149,132 @@ class ApiService {
       throw apiError;
     }
   }
+
+  async saveApplicantDetails(data: {
+    applicationId: string;
+    applicantDetails: any;
+  }): Promise<ApiResponse<any>> {
+    console.log('💾 Saving applicant details:', data);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/applicant-details`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      const responseData = await response.json();
+      console.log('📡 Save Applicant Details API Response:', responseData);
+
+      if (!response.ok) {
+        const error = new Error(
+          responseData.error?.message ||
+            responseData.message ||
+            'Failed to save applicant details'
+        );
+        (error as any).code = responseData.error?.code || 'API_ERROR';
+        throw error;
+      }
+
+      return {
+        success: responseData.success || true,
+        data: responseData.data || responseData,
+      };
+    } catch (error: any) {
+      console.error('Save Applicant Details API Request Error:', error);
+      const apiError = new Error(error.message || 'Network error occurred');
+      (apiError as any).code = 'NETWORK_ERROR';
+      throw apiError;
+    }
+  }
+
+  async updateApplicantDetails(data: {
+    applicationId: string;
+    applicantDetails: any;
+  }): Promise<ApiResponse<any>> {
+    console.log('📝 Updating applicant details:', data);
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/applicant-details/${data.applicationId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data.applicantDetails),
+        }
+      );
+
+      const responseData = await response.json();
+      console.log('📡 Update Applicant Details API Response:', responseData);
+
+      if (!response.ok) {
+        const error = new Error(
+          responseData.error?.message ||
+            responseData.message ||
+            'Failed to update applicant details'
+        );
+        (error as any).code = responseData.error?.code || 'API_ERROR';
+        throw error;
+      }
+
+      return {
+        success: responseData.success || true,
+        data: responseData.data || responseData,
+      };
+    } catch (error: any) {
+      console.error('Update Applicant Details API Request Error:', error);
+      const apiError = new Error(error.message || 'Network error occurred');
+      (apiError as any).code = 'NETWORK_ERROR';
+      throw apiError;
+    }
+  }
+
+  async updateApplication(
+    applicationId: string,
+    data: any
+  ): Promise<ApiResponse<any>> {
+    console.log('📝 Updating application:', { applicationId, data });
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/application/${applicationId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        }
+      );
+
+      const responseData = await response.json();
+      console.log('📡 Update Application API Response:', responseData);
+
+      if (!response.ok) {
+        const error = new Error(
+          responseData.error?.message ||
+            responseData.message ||
+            'Failed to update application'
+        );
+        (error as any).code = responseData.error?.code || 'API_ERROR';
+        throw error;
+      }
+
+      return {
+        success: responseData.success || true,
+        data: responseData.data || responseData,
+      };
+    } catch (error: any) {
+      console.error('Update Application API Request Error:', error);
+      const apiError = new Error(error.message || 'Network error occurred');
+      (apiError as any).code = 'NETWORK_ERROR';
+      throw apiError;
+    }
+  }
 }
 
 export const apiService = new ApiService();

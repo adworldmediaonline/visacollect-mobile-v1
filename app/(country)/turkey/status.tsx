@@ -63,22 +63,19 @@ export default function TurkeyStatusScreen() {
   const { setApplicationId, setEmail, setCurrentStep, setStatus } =
     useApplicationStore();
 
-  const getApplicationMutation = useGetApplication(id as string);
+  const { data: existingApplication, isLoading: isLoadingApplication } =
+    useGetApplication(id as string, undefined);
 
   useEffect(() => {
     if (id) {
       // Clear previous application data when checking new ID
       setApplication(null);
-      getApplicationMutation.mutate();
     }
   }, [id]);
 
   useEffect(() => {
-    if (
-      getApplicationMutation.data?.success &&
-      getApplicationMutation.data?.data
-    ) {
-      const appData = getApplicationMutation.data.data;
+    if (existingApplication?.success && existingApplication?.data) {
+      const appData = existingApplication.data;
       setApplication(appData);
 
       // Update Zustand store
@@ -88,7 +85,7 @@ export default function TurkeyStatusScreen() {
       setStatus(appData.status);
     }
   }, [
-    getApplicationMutation.data,
+    existingApplication,
     setApplicationId,
     setEmail,
     setCurrentStep,
@@ -226,7 +223,7 @@ export default function TurkeyStatusScreen() {
     router.back();
   };
 
-  if (getApplicationMutation.isPending) {
+  if (isLoadingApplication) {
     return (
       <SafeAreaView className="flex-1 bg-gradient-to-br from-primary-50 via-white to-accent-50">
         <StatusBar style="dark" backgroundColor="#f8fafc" />
@@ -251,7 +248,7 @@ export default function TurkeyStatusScreen() {
   }
 
   // Handle "not found" error state with enhanced UI
-  if (error === 'not_found' || getApplicationMutation.isError || !application) {
+  if (error === 'not_found' || !application) {
     return (
       <SafeAreaView className="flex-1 bg-gradient-to-br from-red-50 via-white to-red-50">
         <StatusBar style="dark" backgroundColor="#fef2f2" />
