@@ -68,3 +68,11 @@ export function useCheckApplicationStatus() {
     },
   });
 }
+
+export function useGetApplication(applicationId: string) {
+  return useMutation({
+    mutationFn: async () => {
+      return apiService.getApplication(applicationId);
+    },
+  });
+}

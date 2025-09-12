@@ -2,7 +2,7 @@ import React from 'react';
 import { ActivityIndicator, Text, TouchableOpacity } from 'react-native';
 
 interface ButtonProps {
-  title: string;
+  title?: string;
   onPress: () => void;
   disabled?: boolean;
   loading?: boolean;
@@ -10,6 +10,7 @@ interface ButtonProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
   textClassName?: string;
+  children?: React.ReactNode;
 }
 
 export function Button({
@@ -21,6 +22,7 @@ export function Button({
   size = 'md',
   className = '',
   textClassName = '',
+  children,
 }: ButtonProps) {
   const getVariantStyles = () => {
     switch (variant) {
@@ -99,6 +101,8 @@ export function Button({
             variant === 'outline' || variant === 'ghost' ? '#2563eb' : '#ffffff'
           }
         />
+      ) : children ? (
+        children
       ) : (
         <Text
           className={`

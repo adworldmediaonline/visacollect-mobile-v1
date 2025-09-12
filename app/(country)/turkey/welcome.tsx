@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AlertCircle, Plane } from 'lucide-react-native';
@@ -25,7 +25,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../../../components/ui/Dialog';
-import { Input } from '../../../components/ui/Input';
 
 import {
   useCheckApplicationStatus,
@@ -37,6 +36,8 @@ import { useApplicationStore } from '../../../stores/applicationStore';
 export default function TurkeyWelcomeScreen() {
   const router = useRouter();
   const [isCheckStatusOpen, setIsCheckStatusOpen] = useState(false);
+  const [applicationId, setApplicationIdInput] = useState('');
+  const inputRef = React.useRef<TextInput>(null);
 
   const {
     setApplicationId,
@@ -61,10 +62,16 @@ export default function TurkeyWelcomeScreen() {
     router.push('/(country)/turkey/start');
   };
 
-  const handleCheckStatus = async (data: CheckStatusFormData) => {
+  const handleCheckStatus = async () => {
+    if (!applicationId.trim()) {
+      Alert.alert('Error', 'Please enter an application ID');
+      return;
+    }
+
     try {
-      await checkStatusMutation.mutateAsync(data);
+      await checkStatusMutation.mutateAsync({ applicationId });
       setIsCheckStatusOpen(false);
+      setApplicationIdInput('');
     } catch (error: any) {
       Alert.alert(
         'Error',
@@ -76,8 +83,11 @@ export default function TurkeyWelcomeScreen() {
 
   const handleModalOpenChange = (open: boolean) => {
     setIsCheckStatusOpen(open);
-    if (!open) {
-      checkStatusForm.reset();
+    // Auto-focus input when modal opens
+    if (open) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
     }
   };
 
@@ -149,21 +159,16 @@ export default function TurkeyWelcomeScreen() {
                     <Text className="text-sm font-medium text-gray-700 mb-2">
                       Application ID
                     </Text>
-                    <Input
+                    <TextInput
+                      ref={inputRef}
                       placeholder="e.g., TUR-A1B2C3D4"
-                      value={checkStatusForm.watch('applicationId')}
+                      value={applicationId}
                       onChangeText={text =>
-                        checkStatusForm.setValue(
-                          'applicationId',
-                          text.toUpperCase(),
-                          { shouldValidate: true }
-                        )
-                      }
-                      error={
-                        checkStatusForm.formState.errors.applicationId?.message
+                        setApplicationIdInput(text.toUpperCase())
                       }
                       autoCapitalize="characters"
-                      className="uppercase"
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-base"
+                      placeholderTextColor="#9CA3AF"
                     />
                   </View>
 
@@ -182,7 +187,10 @@ export default function TurkeyWelcomeScreen() {
                   <View className="flex-row gap-3 pt-6">
                     <Button
                       title="Cancel"
-                      onPress={() => setIsCheckStatusOpen(false)}
+                      onPress={() => {
+                        setIsCheckStatusOpen(false);
+                        setApplicationIdInput('');
+                      }}
                       variant="outline"
                       className="flex-1 rounded-2xl border-2 border-gray-200"
                       textClassName="text-gray-600 font-semibold"
@@ -193,7 +201,7 @@ export default function TurkeyWelcomeScreen() {
                           ? 'Checking...'
                           : 'Check Status'
                       }
-                      onPress={checkStatusForm.handleSubmit(handleCheckStatus)}
+                      onPress={handleCheckStatus}
                       loading={checkStatusMutation.isPending}
                       className="flex-1 rounded-2xl shadow-lg"
                       textClassName="font-semibold"

@@ -44,7 +44,6 @@ export function Input({
           w-full px-4 py-3
           bg-white border border-gray-300 rounded-lg
           text-gray-900 text-base
-          placeholder:text-gray-500
           ${disabled ? 'opacity-50 bg-gray-50' : ''}
           ${error ? 'border-error-500' : 'focus:border-primary-500'}
           ${className}

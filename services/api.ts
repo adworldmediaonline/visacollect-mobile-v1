@@ -1,4 +1,4 @@
-import { ApiResponse, ApplicationData } from '../types/country';
+import { ApiResponse } from '../types/country';
 
 // This will be replaced with actual API calls when backend integration is ready
 const API_BASE_URL = 'https://your-backend-url.com/api';
@@ -43,21 +43,34 @@ class ApiService {
     }
   }
 
-  async getApplication(
-    applicationId: string
-  ): Promise<ApiResponse<ApplicationData>> {
-    // Mock implementation for now
+  async getApplication(applicationId: string): Promise<ApiResponse<any>> {
+    // Mock implementation using the real data structure from MongoDB
     return new Promise(resolve => {
       setTimeout(() => {
-        // Simulate API response
+        // Simulate API response with real data structure
         if (applicationId.startsWith('TUR-')) {
           resolve({
             success: true,
             data: {
+              _id: '68bbc1c2de84e629f70c203e',
               applicationId,
-              email: 'user@example.com',
+              passportCountry: 'Vietnam',
+              travelDocument: 'Ordinary Passport',
+              visaType: 'Electronic Visa',
+              destination: 'Turkey',
+              email: 'sunil141292@gmail.com',
+              status: 'started',
               currentStep: 1,
-              status: 'in_progress',
+              visaFee: 51,
+              serviceFee: 35,
+              ipAddress: '::1',
+              userAgent:
+                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+              additionalApplicants: [],
+              lastUpdated: '2025-09-06T05:08:40.065Z',
+              createdAt: '2025-09-06T05:08:18.431Z',
+              updatedAt: '2025-09-06T05:08:40.065Z',
+              __v: 0,
             },
           });
         } else {
@@ -68,7 +81,7 @@ class ApiService {
             },
           });
         }
-      }, 1000);
+      }, 800);
     });
 
     // Uncomment when backend is ready:
