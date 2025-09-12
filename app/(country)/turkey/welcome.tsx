@@ -3,9 +3,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Alert, ScrollView, Text, TextInput, View } from 'react-native';
+import { ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AlertCircle, Plane } from 'lucide-react-native';
@@ -37,6 +37,7 @@ export default function TurkeyWelcomeScreen() {
   const router = useRouter();
   const [isCheckStatusOpen, setIsCheckStatusOpen] = useState(false);
   const [applicationId, setApplicationIdInput] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
   const inputRef = React.useRef<TextInput>(null);
 
   const {
@@ -64,30 +65,53 @@ export default function TurkeyWelcomeScreen() {
 
   const handleCheckStatus = async () => {
     if (!applicationId.trim()) {
-      Alert.alert('Error', 'Please enter an application ID');
+      setErrorMessage('Please enter an application ID');
       return;
     }
 
-    try {
-      await checkStatusMutation.mutateAsync({ applicationId });
+    // Clear previous error message
+    setErrorMessage('');
+
+    // Trigger the mutation
+    checkStatusMutation.mutate({ applicationId });
+  };
+
+  // Handle mutation success
+  useEffect(() => {
+    if (checkStatusMutation.isSuccess) {
       setIsCheckStatusOpen(false);
       setApplicationIdInput('');
-    } catch (error: any) {
-      Alert.alert(
-        'Error',
-        error?.message ||
-          'Unable to check application status. Please try again.'
+      setErrorMessage('');
+    }
+  }, [checkStatusMutation.isSuccess]);
+
+  // Handle mutation error
+  useEffect(() => {
+    if (checkStatusMutation.isError) {
+      // Navigate to status screen with error state
+      setIsCheckStatusOpen(false);
+      setApplicationIdInput('');
+      setErrorMessage('');
+      // Navigate to status screen with the invalid ID to show "not found" state
+      router.push(
+        `/(country)/turkey/status?id=${encodeURIComponent(applicationId)}&error=not_found`
       );
     }
-  };
+  }, [checkStatusMutation.isError, applicationId, router]);
 
   const handleModalOpenChange = (open: boolean) => {
     setIsCheckStatusOpen(open);
-    // Auto-focus input when modal opens
+    // Clear any previous application data and error messages when modal opens
     if (open) {
+      resetApplication();
+      setErrorMessage('');
       setTimeout(() => {
         inputRef.current?.focus();
       }, 100);
+    } else {
+      // Clear everything when modal closes
+      setApplicationIdInput('');
+      setErrorMessage('');
     }
   };
 
@@ -163,22 +187,27 @@ export default function TurkeyWelcomeScreen() {
                       ref={inputRef}
                       placeholder="e.g., TUR-A1B2C3D4"
                       value={applicationId}
-                      onChangeText={text =>
-                        setApplicationIdInput(text.toUpperCase())
-                      }
+                      onChangeText={text => {
+                        setApplicationIdInput(text.toUpperCase());
+                        // Clear error message when user starts typing
+                        if (errorMessage) {
+                          setErrorMessage('');
+                        }
+                      }}
                       autoCapitalize="characters"
-                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-base"
+                      className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 text-base ${
+                        errorMessage ? 'border-red-500' : 'border-gray-300'
+                      }`}
                       placeholderTextColor="#9CA3AF"
                     />
                   </View>
 
-                  {checkStatusMutation.error && (
-                    <View className="bg-error-50 border border-error-200 rounded-lg p-3">
+                  {errorMessage && (
+                    <View className="bg-red-50 border border-red-200 rounded-lg p-3">
                       <View className="flex-row items-center">
                         <AlertCircle size={16} color="#dc2626" />
-                        <Text className="text-error-600 text-sm ml-2">
-                          {checkStatusMutation.error?.message ||
-                            'Application not found. Please check your application ID and try again.'}
+                        <Text className="text-red-600 text-sm ml-2 flex-1">
+                          {errorMessage}
                         </Text>
                       </View>
                     </View>
@@ -190,6 +219,7 @@ export default function TurkeyWelcomeScreen() {
                       onPress={() => {
                         setIsCheckStatusOpen(false);
                         setApplicationIdInput('');
+                        setErrorMessage('');
                       }}
                       variant="outline"
                       className="flex-1 rounded-2xl border-2 border-gray-200"

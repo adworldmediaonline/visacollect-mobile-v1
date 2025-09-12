@@ -1,7 +1,7 @@
 import { ApiResponse } from '../types/country';
 
-// This will be replaced with actual API calls when backend integration is ready
-const API_BASE_URL = 'https://your-backend-url.com/api';
+// Backend API base URL - update this to your actual backend URL
+const API_BASE_URL = 'http://localhost:3000/api/v1/turkey';
 
 class ApiService {
   private async request<T>(
@@ -44,11 +44,16 @@ class ApiService {
   }
 
   async getApplication(applicationId: string): Promise<ApiResponse<any>> {
-    // Mock implementation using the real data structure from MongoDB
-    return new Promise(resolve => {
-      setTimeout(() => {
-        // Simulate API response with real data structure
-        if (applicationId.startsWith('TUR-')) {
+    // For development, you can use mock data by uncommenting the mock section below
+    // and commenting out the real API call
+
+    // Mock implementation for development (comment out when using real API)
+    if (
+      process.env.NODE_ENV === 'development' &&
+      applicationId === 'TUR-VSG9ZZ4Z'
+    ) {
+      return new Promise(resolve => {
+        setTimeout(() => {
           resolve({
             success: true,
             data: {
@@ -63,9 +68,6 @@ class ApiService {
               currentStep: 1,
               visaFee: 51,
               serviceFee: 35,
-              ipAddress: '::1',
-              userAgent:
-                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
               additionalApplicants: [],
               lastUpdated: '2025-09-06T05:08:40.065Z',
               createdAt: '2025-09-06T05:08:18.431Z',
@@ -73,19 +75,37 @@ class ApiService {
               __v: 0,
             },
           });
-        } else {
-          resolve({
-            success: false,
-            error: {
-              message: 'Application not found',
-            },
-          });
-        }
-      }, 800);
-    });
+        }, 800);
+      });
+    }
 
-    // Uncomment when backend is ready:
-    // return this.request<ApplicationData>(`/applications/${applicationId}`);
+    // For development testing - simulate "not found" for invalid IDs
+    if (
+      process.env.NODE_ENV === 'development' &&
+      applicationId !== 'TUR-VSG9ZZ4Z'
+    ) {
+      return new Promise((_, reject) => {
+        setTimeout(() => {
+          const error = new Error('Application not found');
+          (error as any).code = 'NOT_FOUND';
+          reject(error);
+        }, 500);
+      });
+    }
+
+    // Real API call to backend
+    const response = await this.request<any>(`/application/${applicationId}`);
+
+    // If the API returns success: false, throw an error so TanStack Query can handle it properly
+    if (!response.success) {
+      const error = new Error(
+        response.error?.message || 'Application not found'
+      );
+      (error as any).code = response.error?.code;
+      throw error;
+    }
+
+    return response;
   }
 }
 

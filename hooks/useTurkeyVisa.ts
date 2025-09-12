@@ -44,8 +44,13 @@ export function useStartApplication() {
 
 export function useCheckApplicationStatus() {
   const router = useRouter();
-  const { setApplicationId, setEmail, setCurrentStep, setStatus } =
-    useApplicationStore();
+  const {
+    setApplicationId,
+    setEmail,
+    setCurrentStep,
+    setStatus,
+    resetApplication,
+  } = useApplicationStore();
 
   return useMutation({
     mutationFn: async (data: CheckStatusFormData) => {
@@ -65,6 +70,11 @@ export function useCheckApplicationStatus() {
           params: { id: data.applicationId },
         });
       }
+    },
+    onError: () => {
+      // Clear any previous application data when check fails
+      resetApplication();
+      // Error navigation is handled in the component that uses this hook
     },
   });
 }

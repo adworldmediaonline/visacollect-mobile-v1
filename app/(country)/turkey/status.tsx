@@ -17,6 +17,8 @@ import {
   Globe,
   Loader2,
   MapPin,
+  RefreshCw,
+  Search,
   Shield,
 } from 'lucide-react-native';
 
@@ -53,7 +55,7 @@ interface TurkeyApplication {
 
 export default function TurkeyStatusScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams();
+  const { id, error } = useLocalSearchParams();
   const [application, setApplication] = useState<TurkeyApplication | null>(
     null
   );
@@ -65,6 +67,8 @@ export default function TurkeyStatusScreen() {
 
   useEffect(() => {
     if (id) {
+      // Clear previous application data when checking new ID
+      setApplication(null);
       getApplicationMutation.mutate();
     }
   }, [id]);
@@ -236,33 +240,111 @@ export default function TurkeyStatusScreen() {
     );
   }
 
-  if (getApplicationMutation.isError || !application) {
+  // Handle "not found" error state with enhanced UI
+  if (error === 'not_found' || getApplicationMutation.isError || !application) {
     return (
       <SafeAreaView className="flex-1 bg-gradient-to-br from-red-50 via-white to-red-50">
         <StatusBar style="dark" backgroundColor="#fef2f2" />
 
-        <View className="flex-1 justify-center items-center p-6">
-          <View className="items-center gap-6">
-            <View className="w-20 h-20 bg-red-100 rounded-full items-center justify-center">
-              <AlertCircle size={32} color="#ef4444" />
+        <ScrollView
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: 'center',
+            paddingHorizontal: 24,
+            paddingVertical: 32,
+          }}
+        >
+          <View className="items-center gap-8">
+            {/* Header with back button */}
+            <View className="w-full flex-row items-center justify-between mb-4">
+              <Button
+                title=""
+                onPress={() => router.push('/(country)/turkey/welcome')}
+                variant="outline"
+                className="w-12 h-12 rounded-full border-2 border-red-200"
+              >
+                <ArrowLeft size={20} color="#ef4444" />
+              </Button>
+              <Text className="text-lg font-semibold text-red-900">
+                Application Status
+              </Text>
+              <View className="w-12" />
             </View>
-            <View className="items-center gap-3">
-              <Text className="text-xl font-bold text-red-900">
+
+            {/* Error Icon */}
+            <View className="w-24 h-24 bg-red-100 rounded-full items-center justify-center shadow-lg">
+              <Search size={40} color="#ef4444" />
+            </View>
+
+            {/* Error Message */}
+            <View className="items-center gap-4">
+              <Text className="text-2xl font-bold text-red-900 text-center">
                 Application Not Found
               </Text>
-              <Text className="text-base text-red-700 text-center px-4">
-                We couldn't find an application with ID "{id}". Please check
-                your application ID and try again.
+              <Text className="text-base text-red-700 text-center leading-6">
+                We couldn't find an application with ID{' '}
+                <Text className="font-mono font-semibold bg-red-100 px-2 py-1 rounded">
+                  {id}
+                </Text>
+                . Please check your application ID and try again.
               </Text>
             </View>
-            <Button
-              title="Back to Welcome"
-              onPress={() => router.push('/(country)/turkey/welcome')}
-              variant="outline"
-              className="w-full max-w-xs"
-            />
+
+            {/* Action Buttons */}
+            <View className="w-full gap-4">
+              <Button
+                title="Check Another Application"
+                onPress={() => router.push('/(country)/turkey/welcome')}
+                className="w-full rounded-2xl shadow-lg"
+                size="lg"
+              >
+                <View className="flex-row items-center gap-2">
+                  <RefreshCw size={20} color="#ffffff" />
+                  <Text className="text-white font-semibold text-base">
+                    Check Another Application
+                  </Text>
+                </View>
+              </Button>
+
+              <Button
+                title="Start New Application"
+                onPress={() => router.push('/(country)/turkey/start')}
+                variant="outline"
+                className="w-full rounded-2xl border-2 border-red-200"
+                size="lg"
+              >
+                <View className="flex-row items-center gap-2">
+                  <FileText size={20} color="#ef4444" />
+                  <Text className="text-red-600 font-semibold text-base">
+                    Start New Application
+                  </Text>
+                </View>
+              </Button>
+            </View>
+
+            {/* Help Section */}
+            <Card className="w-full bg-red-50 border-red-200">
+              <CardContent className="p-4">
+                <View className="flex-row items-start gap-3">
+                  <View className="w-8 h-8 bg-red-100 rounded-full items-center justify-center">
+                    <AlertCircle size={16} color="#ef4444" />
+                  </View>
+                  <View className="flex-1 gap-2">
+                    <Text className="font-semibold text-red-900">
+                      Need Help?
+                    </Text>
+                    <Text className="text-sm text-red-700 leading-5">
+                      If you believe this is an error, please contact our
+                      support team with your application ID.
+                    </Text>
+                  </View>
+                </View>
+              </CardContent>
+            </Card>
           </View>
-        </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
