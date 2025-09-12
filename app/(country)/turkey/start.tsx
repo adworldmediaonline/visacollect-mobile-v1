@@ -310,10 +310,15 @@ export default function TurkeyStartScreen() {
         </Button>
         <View className="flex-1 items-center">
           <Text className="text-lg font-semibold text-gray-900">
-            Step 1: Start Application
+            Step 1:{' '}
+            {existingApplication?.success
+              ? 'Update Application'
+              : 'Start Application'}
           </Text>
           <Text className="text-sm text-gray-600">
-            Begin your Turkey visa application
+            {existingApplication?.success
+              ? 'Update your application details'
+              : 'Begin your Turkey visa application'}
           </Text>
         </View>
         <View className="w-10" />
@@ -531,16 +536,24 @@ export default function TurkeyStartScreen() {
         <View className="gap-3">
           <Button
             onPress={form.handleSubmit(onSubmit)}
-            loading={startApplicationMutation.isPending}
+            loading={
+              startApplicationMutation.isPending ||
+              updateApplicationMutation.isPending
+            }
             className="w-full"
             size="lg"
           >
             <View className="flex-row items-center justify-center gap-2">
               <Save size={20} color="#ffffff" />
               <Text className="text-white font-semibold">
-                {startApplicationMutation.isPending
-                  ? 'Starting...'
-                  : 'Start Application'}
+                {startApplicationMutation.isPending ||
+                updateApplicationMutation.isPending
+                  ? existingApplication?.success
+                    ? 'Updating...'
+                    : 'Starting...'
+                  : existingApplication?.success
+                    ? 'Update Application'
+                    : 'Start Application'}
               </Text>
             </View>
           </Button>

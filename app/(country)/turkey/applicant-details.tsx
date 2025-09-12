@@ -278,10 +278,15 @@ export default function ApplicantDetailsScreen() {
         </Button>
         <View className="flex-1 items-center">
           <Text className="text-lg font-semibold text-gray-900">
-            Step 2: Personal Information
+            Step 2:{' '}
+            {existingApplication?.data?.mainApplicant
+              ? 'Update Personal Information'
+              : 'Personal Information'}
           </Text>
           <Text className="text-sm text-gray-600">
-            Please provide your personal and passport details
+            {existingApplication?.data?.mainApplicant
+              ? 'Update your personal and passport details'
+              : 'Please provide your personal and passport details'}
           </Text>
         </View>
         <View className="w-10" />
@@ -695,7 +700,7 @@ export default function ApplicantDetailsScreen() {
                     ? 'Updating...'
                     : 'Saving...'
                   : existingApplication?.data?.mainApplicant
-                    ? 'Update & Continue'
+                    ? 'Update Details'
                     : 'Save & Continue'}
               </Text>
             </View>
