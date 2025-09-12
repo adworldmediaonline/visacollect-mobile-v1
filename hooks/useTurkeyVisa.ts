@@ -86,3 +86,11 @@ export function useGetApplication(applicationId: string) {
     },
   });
 }
+
+export function useGetPaymentByApplicationId(applicationId: string) {
+  return useMutation({
+    mutationFn: async () => {
+      return apiService.getPaymentByApplicationId(applicationId);
+    },
+  });
+}

@@ -175,6 +175,16 @@ export default function TurkeyStatusScreen() {
           icon: <CreditCard size={20} color="#ffffff" />,
           action: () => router.push('/(country)/turkey/start'),
         };
+      case 'paid':
+        return {
+          label: 'View Payment Details',
+          description: 'View your payment information and receipt',
+          icon: <CreditCard size={20} color="#ffffff" />,
+          action: () =>
+            router.push(
+              `/(country)/turkey/payment-details?id=${application?.applicationId}`
+            ),
+        };
       case 'approved':
         return {
           label: 'Download Visa',
@@ -524,9 +534,11 @@ export default function TurkeyStatusScreen() {
                     <Clock size={24} color="#1e8ec2" />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-lg font-semibold text-primary-800">
-                      Step {application.currentStep} of 5
-                    </Text>
+                    {application.status !== 'paid' && (
+                      <Text className="text-lg font-semibold text-primary-800">
+                        Step {application.currentStep} of 5
+                      </Text>
+                    )}
                     <Text className="text-base text-primary-600">
                       {getStatusDisplayText(application.status)}
                     </Text>
