@@ -223,7 +223,7 @@ export default function ApplicantDetailsScreen() {
 
           // Navigate to next step after a brief delay
           setTimeout(() => {
-            router.push(`/(country)/turkey/status?id=${id}`);
+            router.push(`/(country)/turkey/documents?id=${id}`);
           }, 1000);
         }
       } else {
@@ -238,7 +238,7 @@ export default function ApplicantDetailsScreen() {
           setApplicationData(data);
 
           // Navigate to next step (documents)
-          router.push(`/(country)/turkey/status?id=${id}`);
+          router.push(`/(country)/turkey/documents?id=${id}`);
         }
       }
     } catch (error: any) {

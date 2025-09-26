@@ -122,3 +122,39 @@ export function useUpdateApplication() {
     },
   });
 }
+
+export function useUploadDocuments() {
+  const router = useRouter();
+  const { setApplicationData } = useApplicationStore();
+
+  return useMutation({
+    mutationFn: async (data: { applicationId: string; documents: any }) => {
+      return apiService.uploadDocuments(data);
+    },
+    onSuccess: (response: any) => {
+      if (response.success) {
+        const data = response.data;
+        setApplicationData({
+          documents: data.documents,
+        });
+
+        // Navigate to the status screen
+        router.push(`/(country)/turkey/status?id=${data.applicationId}`);
+      }
+    },
+  });
+}
+
+export function useUpdateDocuments() {
+  return useMutation({
+    mutationFn: async ({
+      applicationId,
+      documents,
+    }: {
+      applicationId: string;
+      documents: any;
+    }) => {
+      return apiService.updateDocuments(applicationId, documents);
+    },
+  });
+}

@@ -275,6 +275,149 @@ class ApiService {
       throw apiError;
     }
   }
+
+  async uploadFilesToCloudinary(
+    files: any[],
+    folder: string
+  ): Promise<ApiResponse<any>> {
+    console.log('📤 Uploading files to Cloudinary:', {
+      files: files.length,
+      folder,
+    });
+
+    try {
+      const formData = new FormData();
+
+      // Add files to FormData
+      files.forEach((file, index) => {
+        formData.append('documents', {
+          uri: file.uri,
+          type: file.type,
+          name: file.name,
+        } as any);
+      });
+
+      // Add folder information
+      formData.append('folder', folder);
+
+      const response = await fetch(
+        `${API_BASE_URL.replace('/turkey', '')}/multiple/document`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          body: formData,
+        }
+      );
+
+      const responseData = await response.json();
+      console.log('📡 Cloudinary Upload Response:', responseData);
+
+      if (!response.ok) {
+        const error = new Error(
+          responseData.error?.message ||
+            responseData.message ||
+            'Failed to upload files to Cloudinary'
+        );
+        (error as any).code = responseData.error?.code || 'API_ERROR';
+        throw error;
+      }
+
+      return {
+        success: responseData.success || true,
+        data: responseData.data || responseData,
+      };
+    } catch (error: any) {
+      console.error('Cloudinary Upload Error:', error);
+      const apiError = new Error(error.message || 'Network error occurred');
+      (apiError as any).code = 'NETWORK_ERROR';
+      throw apiError;
+    }
+  }
+
+  async uploadDocuments(data: {
+    applicationId: string;
+    documents: any;
+  }): Promise<ApiResponse<any>> {
+    console.log('📤 Registering documents with application:', data);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/documents`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      const responseData = await response.json();
+      console.log('📡 Register Documents API Response:', responseData);
+
+      if (!response.ok) {
+        const error = new Error(
+          responseData.error?.message ||
+            responseData.message ||
+            'Failed to register documents'
+        );
+        (error as any).code = responseData.error?.code || 'API_ERROR';
+        throw error;
+      }
+
+      return {
+        success: responseData.success || true,
+        data: responseData.data || responseData,
+      };
+    } catch (error: any) {
+      console.error('Register Documents API Request Error:', error);
+      const apiError = new Error(error.message || 'Network error occurred');
+      (apiError as any).code = 'NETWORK_ERROR';
+      throw apiError;
+    }
+  }
+
+  async updateDocuments(
+    applicationId: string,
+    documents: any
+  ): Promise<ApiResponse<any>> {
+    console.log('📝 Updating documents:', { applicationId, documents });
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/documents/${applicationId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ documents }),
+        }
+      );
+
+      const responseData = await response.json();
+      console.log('📡 Update Documents API Response:', responseData);
+
+      if (!response.ok) {
+        const error = new Error(
+          responseData.error?.message ||
+            responseData.message ||
+            'Failed to update documents'
+        );
+        (error as any).code = responseData.error?.code || 'API_ERROR';
+        throw error;
+      }
+
+      return {
+        success: responseData.success || true,
+        data: responseData.data || responseData,
+      };
+    } catch (error: any) {
+      console.error('Update Documents API Request Error:', error);
+      const apiError = new Error(error.message || 'Network error occurred');
+      (apiError as any).code = 'NETWORK_ERROR';
+      throw apiError;
+    }
+  }
 }
 
 export const apiService = new ApiService();
