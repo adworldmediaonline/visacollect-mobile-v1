@@ -210,7 +210,9 @@ export default function DocumentsScreen() {
 
             // Navigate to next step after a brief delay
             setTimeout(() => {
-              router.push(`/(country)/turkey/status?id=${applicationId}`);
+              router.push(
+                `/(country)/turkey/add-applicant?id=${applicationId}`
+              );
             }, 1000);
           }
         } catch (error: any) {

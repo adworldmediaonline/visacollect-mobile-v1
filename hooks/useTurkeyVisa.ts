@@ -138,8 +138,8 @@ export function useUploadDocuments() {
           documents: data.documents,
         });
 
-        // Navigate to the status screen
-        router.push(`/(country)/turkey/status?id=${data.applicationId}`);
+        // Navigate to the add applicant screen
+        router.push(`/(country)/turkey/add-applicant?id=${data.applicationId}`);
       }
     },
   });
@@ -155,6 +155,44 @@ export function useUpdateDocuments() {
       documents: any;
     }) => {
       return apiService.updateDocuments(applicationId, documents);
+    },
+  });
+}
+
+export function useAddApplicant() {
+  return useMutation({
+    mutationFn: async (data: { applicationId: string; applicant: any }) => {
+      return apiService.addApplicant(data);
+    },
+  });
+}
+
+export function useUpdateApplicant() {
+  return useMutation({
+    mutationFn: async ({
+      applicationId,
+      index,
+      applicant,
+    }: {
+      applicationId: string;
+      index: number;
+      applicant: any;
+    }) => {
+      return apiService.updateApplicant(applicationId, index, applicant);
+    },
+  });
+}
+
+export function useDeleteApplicant() {
+  return useMutation({
+    mutationFn: async ({
+      applicationId,
+      index,
+    }: {
+      applicationId: string;
+      index: number;
+    }) => {
+      return apiService.deleteApplicant(applicationId, index);
     },
   });
 }

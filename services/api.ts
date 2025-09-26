@@ -9,6 +9,10 @@ class ApiService {
     options?: RequestInit
   ): Promise<ApiResponse<T>> {
     try {
+      console.log(
+        `🌐 API Request: ${options?.method || 'GET'} ${API_BASE_URL}${endpoint}`
+      );
+
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         headers: {
           'Content-Type': 'application/json',
@@ -16,6 +20,23 @@ class ApiService {
         },
         ...options,
       });
+
+      console.log(
+        `📡 API Response Status: ${response.status} ${response.statusText}`
+      );
+
+      // Check if response is HTML (error page)
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('text/html')) {
+        const htmlText = await response.text();
+        console.error(
+          '❌ Server returned HTML instead of JSON:',
+          htmlText.substring(0, 200)
+        );
+        throw new Error(
+          `Server error: ${response.status} ${response.statusText}`
+        );
+      }
 
       const data = await response.json();
 
@@ -35,7 +56,12 @@ class ApiService {
         data: data.data || data,
       };
     } catch (error: any) {
-      console.error('API Request Error:', error);
+      console.error('❌ API Request Error:', error);
+      if (error.message.includes('JSON Parse error')) {
+        throw new Error(
+          'Server returned invalid response. Please check if the backend is running.'
+        );
+      }
       return {
         success: false,
         error: {
@@ -413,6 +439,75 @@ class ApiService {
       };
     } catch (error: any) {
       console.error('Update Documents API Request Error:', error);
+      const apiError = new Error(error.message || 'Network error occurred');
+      (apiError as any).code = 'NETWORK_ERROR';
+      throw apiError;
+    }
+  }
+
+  // Add Applicant Methods
+  async addApplicant(data: { applicationId: string; applicant: any }) {
+    try {
+      console.log('🚀 Add Applicant API Request:', {
+        applicationId: data.applicationId,
+        applicant: data.applicant,
+      });
+
+      const response = await this.request('/add-applicant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          applicationId: data.applicationId,
+          applicant: data.applicant,
+        }),
+      });
+
+      console.log('📡 Add Applicant API Response:', response);
+      return response;
+    } catch (error: any) {
+      console.error('Add Applicant API Request Error:', error);
+      const apiError = new Error(error.message || 'Network error occurred');
+      (apiError as any).code = 'NETWORK_ERROR';
+      throw apiError;
+    }
+  }
+
+  async updateApplicant(applicationId: string, index: number, applicant: any) {
+    try {
+      const response = await this.request(
+        `/add-applicant/${applicationId}/${index}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ applicant }),
+        }
+      );
+
+      return response;
+    } catch (error: any) {
+      console.error('Update Applicant API Request Error:', error);
+      const apiError = new Error(error.message || 'Network error occurred');
+      (apiError as any).code = 'NETWORK_ERROR';
+      throw apiError;
+    }
+  }
+
+  async deleteApplicant(applicationId: string, index: number) {
+    try {
+      const response = await this.request(
+        `/add-applicant/${applicationId}/${index}`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      return response;
+    } catch (error: any) {
+      console.error('Delete Applicant API Request Error:', error);
       const apiError = new Error(error.message || 'Network error occurred');
       (apiError as any).code = 'NETWORK_ERROR';
       throw apiError;
