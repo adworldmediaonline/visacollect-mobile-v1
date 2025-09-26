@@ -10,6 +10,15 @@ export default function CountryLayout() {
         name="turkey/payment-details"
         options={{ headerShown: false }}
       />
+      <Stack.Screen
+        name="turkey/applicant-details"
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen name="turkey/documents" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="turkey/add-applicant"
+        options={{ headerShown: false }}
+      />
     </Stack>
   );
 }

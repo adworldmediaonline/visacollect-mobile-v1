@@ -2,11 +2,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { useFieldArray, useForm } from 'react-hook-form';
+import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ArrowLeft, FileText, Save, Upload } from 'lucide-react-native';
+import { ArrowLeft, FileText, Save, Upload, X } from 'lucide-react-native';
 
 import { Controller } from 'react-hook-form';
 import {
@@ -125,39 +125,58 @@ export default function DocumentsScreen() {
     setErrorMessage('');
     setSuccessMessage('');
 
-    // If we have an existing application, populate the form with its data
-    if (existingApplication?.success && existingApplication.data) {
-      const appData = existingApplication.data;
+    console.log('📄 Documents useEffect triggered');
+    console.log('📄 existingApplication:', existingApplication);
+    console.log('📄 applicationId:', applicationId);
 
-      // Check if documents exist
-      if (appData.documents) {
-        form.reset({
-          supportingDocuments: appData.documents.supportingDocuments || [],
-          additionalDocuments: appData.documents.additionalDocuments || [],
-        });
+    // If we have an existing application with mainApplicant documents, populate the form
+    if (
+      existingApplication?.success &&
+      existingApplication.data?.mainApplicant?.documents
+    ) {
+      const documents = existingApplication.data.mainApplicant.documents;
+      console.log('📄 Loading existing documents:', documents);
 
-        // Update store with existing application data
-        setApplicationData({
-          documents: appData.documents,
-        });
-      } else {
-        // Reset form to default values for new documents
-        form.reset({
-          supportingDocuments: [],
-          additionalDocuments: [],
-        });
+      // Clean up supporting documents to handle null expiryDate values
+      const cleanSupportingDocuments = (
+        documents.supportingDocuments || []
+      ).map(doc => ({
+        ...doc,
+        expiryDate: doc.expiryDate === null ? undefined : doc.expiryDate,
+      }));
 
-        // Additional cleanup: clear any stored document data that might interfere
-        setApplicationData({});
-      }
-    } else {
-      // Reset form to default values for new application
       form.reset({
-        supportingDocuments: [],
+        supportingDocuments: cleanSupportingDocuments,
+        additionalDocuments: documents.additionalDocuments || [],
+      });
+
+      console.log('📄 Clean supporting documents:', cleanSupportingDocuments);
+      console.log('📄 Additional documents:', documents.additionalDocuments);
+
+      // Update store with existing application data
+      setApplicationData({
+        documents: {
+          supportingDocuments: cleanSupportingDocuments,
+          additionalDocuments: documents.additionalDocuments || [],
+        },
+      });
+    } else {
+      console.log('📄 No existing documents found, resetting form');
+      // Reset form to default values for new documents
+      form.reset({
+        supportingDocuments: [
+          {
+            documentType: 'Visa',
+            issuingCountry: '',
+            documentNumber: '',
+            expiryDate: '',
+            isUnlimited: false,
+          },
+        ],
         additionalDocuments: [],
       });
 
-      // Additional cleanup: clear any stored application data that might interfere
+      // Additional cleanup: clear any stored document data that might interfere
       setApplicationData({});
     }
   }, [form, existingApplication, applicationId, setApplicationData]);
@@ -187,7 +206,7 @@ export default function DocumentsScreen() {
 
     try {
       // If we already have documents, update them on the backend
-      if (existingApplication?.data?.documents) {
+      if (existingApplication?.data?.mainApplicant?.documents) {
         // Clear any previous messages
         setErrorMessage('');
         setSuccessMessage('');
@@ -292,12 +311,12 @@ export default function DocumentsScreen() {
         <View className="flex-1 items-center">
           <Text className="text-lg font-semibold text-gray-900">
             Step 3:{' '}
-            {existingApplication?.data?.documents
+            {existingApplication?.data?.mainApplicant?.documents
               ? 'Update Documents'
               : 'Upload Documents'}
           </Text>
           <Text className="text-sm text-gray-600">
-            {existingApplication?.data?.documents
+            {existingApplication?.data?.mainApplicant?.documents
               ? 'Update your supporting documents'
               : 'Upload your supporting documents'}
           </Text>
@@ -560,6 +579,66 @@ export default function DocumentsScreen() {
               acceptedTypes={['image/*', 'application/pdf']}
               applicationId={applicationId}
             />
+
+            {/* Display Uploaded Additional Documents */}
+            {form.watch('additionalDocuments')?.length > 0 && (
+              <View className="mt-6">
+                <Text className="text-sm font-semibold text-gray-900 mb-3">
+                  Uploaded Documents ({form.watch('additionalDocuments').length}
+                  )
+                </Text>
+                <View className="gap-3">
+                  {form
+                    .watch('additionalDocuments')
+                    .map((doc: any, index: number) => (
+                      <View
+                        key={index}
+                        className="bg-gray-50 rounded-lg p-4 border border-gray-200"
+                      >
+                        <View className="flex-row items-start justify-between">
+                          <View className="flex-row items-start flex-1">
+                            <View className="w-8 h-8 bg-primary-100 rounded-full items-center justify-center mr-3 mt-1">
+                              <FileText size={16} color="#1e8ec2" />
+                            </View>
+                            <View className="flex-1">
+                              <Text className="font-medium text-gray-900 text-sm">
+                                {doc.name}
+                              </Text>
+                              <Text className="text-xs text-gray-500 mt-1">
+                                {doc.size
+                                  ? `${(doc.size / 1024).toFixed(1)} KB`
+                                  : ''}
+                                {doc.format && ` • ${doc.format.toUpperCase()}`}
+                              </Text>
+                              <Text className="text-xs text-gray-500 mt-1">
+                                Uploaded:{' '}
+                                {doc.uploadedAt
+                                  ? new Date(
+                                      doc.uploadedAt
+                                    ).toLocaleDateString()
+                                  : 'Unknown'}
+                              </Text>
+                            </View>
+                          </View>
+                          <TouchableOpacity
+                            onPress={() => {
+                              const currentDocs =
+                                form.getValues('additionalDocuments') || [];
+                              const newDocs = currentDocs.filter(
+                                (_, i) => i !== index
+                              );
+                              form.setValue('additionalDocuments', newDocs);
+                            }}
+                            className="w-8 h-8 bg-red-100 rounded-full items-center justify-center"
+                          >
+                            <X size={16} color="#dc2626" />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    ))}
+                </View>
+              </View>
+            )}
           </CardContent>
         </Card>
       </ScrollView>
@@ -581,10 +660,10 @@ export default function DocumentsScreen() {
               <Text className="text-white font-semibold">
                 {uploadDocumentsMutation.isPending ||
                 updateDocumentsMutation.isPending
-                  ? existingApplication?.data?.documents
+                  ? existingApplication?.data?.mainApplicant?.documents
                     ? 'Updating...'
                     : 'Uploading...'
-                  : existingApplication?.data?.documents
+                  : existingApplication?.data?.mainApplicant?.documents
                     ? 'Update Documents'
                     : 'Upload Documents'}
               </Text>

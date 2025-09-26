@@ -406,20 +406,34 @@ export default function AddApplicantScreen() {
     <SafeAreaView className="flex-1 bg-gradient-to-br from-primary-50 to-primary-100">
       <StatusBar style="dark" backgroundColor="#eff6ff" />
 
-      {/* Header */}
-      <View className="flex-row items-center justify-between px-4 py-4 bg-white">
-        <Button
-          onPress={() => router.push(`/(country)/turkey/documents?id=${id}`)}
-          variant="ghost"
-          className="flex-row items-center"
-        >
-          <ArrowLeft size={20} color="#1e8ec2" />
-          <Text className="text-primary-600 font-medium ml-2">Back</Text>
-        </Button>
-        <Text className="text-lg font-semibold text-gray-900">
-          {editingApplicant ? 'Edit Applicant' : 'Add Applicants'}
-        </Text>
-        <View className="w-16" />
+      {/* Modern Header */}
+      <View className="bg-white border-b border-gray-100">
+        <View className="flex-row items-center justify-between px-6 py-4">
+          <TouchableOpacity
+            onPress={() => router.push(`/(country)/turkey/documents?id=${id}`)}
+            className="w-8 h-8 bg-primary-100 rounded-full items-center justify-center"
+          >
+            <ArrowLeft size={18} color="#1e8ec2" />
+          </TouchableOpacity>
+
+          <View className="flex-1 items-center">
+            <Text className="text-xl font-bold text-gray-900">
+              {editingApplicant ? 'Edit Applicant' : 'Add Applicants'}
+            </Text>
+            <Text className="text-sm text-gray-500 mt-1">
+              {editingApplicant
+                ? 'Update applicant information'
+                : 'Add family members or additional applicants'}
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            onPress={() => router.push(`/(country)/turkey/status?id=${id}`)}
+            className="px-3 py-2 bg-gray-100 rounded-lg"
+          >
+            <Text className="text-gray-600 font-medium text-sm">Skip</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -444,55 +458,50 @@ export default function AddApplicantScreen() {
           completedSteps={['start', 'applicant', 'documents']}
         />
 
-        {/* Skip Option */}
-        <Card className="mb-6">
-          <CardContent className="items-center py-6">
-            <Text className="text-center text-gray-600 mb-4">
-              You can skip this step and add applicants later, or continue to
-              payment
-            </Text>
-            <Button
-              onPress={() => router.push(`/(country)/turkey/status?id=${id}`)}
-              variant="outline"
-              title="Skip & Continue to Payment"
-              className="w-full"
-            />
-          </CardContent>
-        </Card>
-
         {/* Existing Additional Applicants */}
         {existingApplication?.data?.additionalApplicants &&
           existingApplication.data.additionalApplicants.length > 0 && (
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="flex-row items-center">
-                  <Users size={20} color="#1e8ec2" />
-                  <Text className="text-lg font-semibold text-gray-900 ml-2">
-                    Additional Applicants (
-                    {existingApplication.data.additionalApplicants.length})
-                  </Text>
-                </CardTitle>
-                <CardDescription>
-                  Manage the applicants added to this visa application
-                </CardDescription>
+            <Card className="mb-6 shadow-sm">
+              <CardHeader className="pb-4">
+                <View className="flex-row items-center">
+                  <View className="w-8 h-8 bg-primary-100 rounded-full items-center justify-center mr-3">
+                    <Users size={18} color="#1e8ec2" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-lg font-bold text-gray-900">
+                      Additional Applicants
+                    </Text>
+                    <Text className="text-sm text-gray-500">
+                      {existingApplication.data.additionalApplicants.length}{' '}
+                      applicant
+                      {existingApplication.data.additionalApplicants.length !==
+                      1
+                        ? 's'
+                        : ''}{' '}
+                      added
+                    </Text>
+                  </View>
+                </View>
               </CardHeader>
-              <CardContent>
-                {existingApplication.data.additionalApplicants.map(
-                  (applicant: any, index: number) => (
-                    <ApplicantCard
-                      key={applicant._id || index}
-                      applicant={applicant}
-                      index={index}
-                      onEdit={() => handleEditApplicant(applicant, index)}
-                      onDelete={() => handleDeleteApplicant(index)}
-                      isDeleting={deletingApplicantIndex === index}
-                      isUpdating={
-                        editingApplicant?.index === index &&
-                        updateApplicantMutation.isPending
-                      }
-                    />
-                  )
-                )}
+              <CardContent className="pt-0">
+                <View className="gap-3">
+                  {existingApplication.data.additionalApplicants.map(
+                    (applicant: any, index: number) => (
+                      <ApplicantCard
+                        key={applicant._id || index}
+                        applicant={applicant}
+                        index={index}
+                        onEdit={() => handleEditApplicant(applicant, index)}
+                        onDelete={() => handleDeleteApplicant(index)}
+                        isDeleting={deletingApplicantIndex === index}
+                        isUpdating={
+                          editingApplicant?.index === index &&
+                          updateApplicantMutation.isPending
+                        }
+                      />
+                    )
+                  )}
+                </View>
               </CardContent>
             </Card>
           )}
@@ -984,15 +993,6 @@ export default function AddApplicantScreen() {
       {/* Sticky Action Buttons */}
       <View className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-4">
         <View className="flex-row gap-3">
-          <Button
-            onPress={() => router.push(`/(country)/turkey/documents?id=${id}`)}
-            variant="outline"
-            className="flex-1"
-          >
-            <ArrowLeft size={16} color="#1e8ec2" />
-            <Text className="text-primary-600 font-medium ml-2">Back</Text>
-          </Button>
-
           {editingApplicant && (
             <Button
               onPress={handleCancelEdit}
