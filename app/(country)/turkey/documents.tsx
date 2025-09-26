@@ -22,6 +22,7 @@ import {
   CardHeader,
   CardTitle,
 } from '../../../components/ui/Card';
+import { DatePicker } from '../../../components/ui/DatePicker';
 import { FileUpload } from '../../../components/ui/FileUpload';
 import {
   FormControl,
@@ -171,6 +172,19 @@ export default function DocumentsScreen() {
       return;
     }
 
+    // Transform the data to match backend expectations
+    const transformedData = {
+      ...data,
+      supportingDocuments: data.supportingDocuments.map(doc => {
+        // If isUnlimited is true, remove expiryDate completely
+        if (doc.isUnlimited) {
+          const { expiryDate, ...rest } = doc;
+          return rest;
+        }
+        return doc;
+      }),
+    };
+
     try {
       // If we already have documents, update them on the backend
       if (existingApplication?.data?.documents) {
@@ -182,7 +196,7 @@ export default function DocumentsScreen() {
           // Update documents on backend
           const updateResponse = await updateDocumentsMutation.mutateAsync({
             applicationId: applicationId!,
-            documents: data,
+            documents: transformedData,
           });
 
           if (updateResponse.success) {
@@ -211,7 +225,7 @@ export default function DocumentsScreen() {
       // Create new documents
       await uploadDocumentsMutation.mutateAsync({
         applicationId: applicationId!,
-        documents: data,
+        documents: transformedData,
       });
     } catch (error: any) {
       console.error('Error uploading documents:', error);
@@ -239,7 +253,6 @@ export default function DocumentsScreen() {
       documentType: 'Visa' as const,
       issuingCountry: '',
       documentNumber: '',
-      expiryDate: '',
       isUnlimited: false,
     });
   };
@@ -479,10 +492,18 @@ export default function DocumentsScreen() {
                         <FormItem>
                           <FormLabel>Expiry Date *</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="YYYY-MM-DD"
+                            <DatePicker
                               value={field.value}
-                              onChangeText={field.onChange}
+                              onValueChange={field.onChange}
+                              placeholder="Select expiry date"
+                              minimumDate={new Date()}
+                              maximumDate={
+                                new Date(
+                                  new Date().getFullYear() + 20,
+                                  new Date().getMonth(),
+                                  new Date().getDate()
+                                )
+                              }
                             />
                           </FormControl>
                           <FormMessage>
